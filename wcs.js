@@ -17,29 +17,32 @@
     var validTransforms = ['RA---TAN', 'DEC--TAN'];
     
     // Trig
-    function degToRad(deg) {
+    function deg2rad(deg) {
         return ((2 * Math.PI * deg) / 360);
     }
-    function radToDeg(rad) {
+    function rad2deg(rad) {
         return (360 * rad / (2 * Math.PI));
     }
     function sind(deg) {
-        return Math.sin(degToRad(deg));
+        return Math.sin(deg2rad(deg));
     }
     function cosd(deg) {
-        return Math.cos(degToRad(deg));
+        return Math.cos(deg2rad(deg));
     }
     function tand(deg) {
-        return Math.tan(degToRad(deg));
+        return Math.tan(deg2rad(deg));
     }
-    function arcsind(deg) {
-        return Math.asin(degToRad(deg));
+    function asind(x) {
+        return rad2deg(Math.asin(x));
     }
-    function arccosd(deg) {
-        return Math.acos(degToRad(deg));
+    function acosd(x) {
+        return rad2deg(Math.acos(x));
     }
-    function arctand(deg) {
-        return Math.atan(degToRad(deg));
+    function atand(x) {
+        return rad2deg(Math.atan(x));
+    }
+    function atan2d(x, y) {
+        return rad2deg(Math.atan2(x, y));
     }
 
     function inArray(arr, obj) {

@@ -150,7 +150,10 @@
         
         /*
          * Returns object containing ra and dec corresponding to pixel coordinates.
-         * Accepts pixel coordinates as integers in order of FITS NAXIS axes: (NAXIS1, NAXIS2, ...)
+         * Accepts pixel coordinates as integers in order of FITS NAXIS axes (NAXIS1, NAXIS2, ...).
+         * 
+         * eg: var wcsMapper = new WCS.Mapper(fitsHeader);
+         *     var ra = wcsMapper.pixelToCoordinate(x, y).ra;
          */
         this.pixelToCoordinate = function() {
             // TODO: validate arguments

@@ -47,7 +47,10 @@
     function atand(x) {
         return rad2deg(Math.atan(x));
     }
-    function atan2d(y, x) {
+    function cotd(x) {
+        return (1 / tand(x));
+    }
+   function atan2d(y, x) {
         return rad2deg(Math.atan2(y, x));
     }
     // Note this reverses the order of atan2d, because arg() is defined as arg(x, y), and Javascript defines
@@ -69,6 +72,8 @@
         var axisKeywords = ['NAXIS', 'CTYPE', 'CDELT', 'CRPIX', 'CRVAL', 'CUNIT'];
         var singleKeywords = ['NAXIS', 'LONPOLE', 'EQUINOX', 'RADESYS'];
 
+        // For each axis, copies an axis keyword from the header to the wcsobj. 
+        // eg: If there are 2 axes, then axis keyword CTYPE copies CTYPE1 and CTYPE2
         for (var axis=1; axis<=numAxes; axis++) {
             for (var i=0; i<axisKeywords.length; i++) {
                 var k = axisKeywords[i] + axis;
@@ -86,7 +91,7 @@
     }
 
     // Returns list of the intermediate world coordinates of the wcsobj at the pixel coordinates
-    //  given in args. The returned list will be the sae length as the argument list.
+    //  given in args. The returned list will be the same length as the argument list.
     // Asserts: args.length <= wcsobj.NAXIS
     // Accepts: wcsobj
     //          args: list of axes for which to do transformation.
@@ -99,10 +104,25 @@
         // Default PCxxx transformation matrix element assumes identity matrix.
         // For each non-zero element in identity, do: (CDELTj * (px - CRPIXi))
         // NOTE: CDELT an CRPIX have 1 as first index.
+        // Section 7.3.1, example 1 in Calabretta et al 2002
         for (var i=0; i<args.length; i++) {
             coord[i] = wcsobj['CDELT' + (i+1)] * (args[i] - wcsobj['CRPIX'+(i+1)]);
         }
         return coord;
+    }
+
+    // TODO: make multidim like getIntermediateWorldCoords()
+    function intermediateToFinal(wcsobj, coord) {
+        var x = coord[0];
+        var y = coord[1];
+        
+        var finalcoord = [];
+        for (var i=0; i<coord.length; i++) {
+            // round to nearest integer, because this is supposed to be a pixel
+            finalcoord[i] = Math.round((coord[i] / wcsobj['CDELT' + (i+1)]) + wcsobj['CRPIX'+(i+1)]);
+        }
+
+        return finalcoord;
     }
 
     /*
@@ -114,13 +134,29 @@
         var x = coords[0];
         var y = coords[1];
         
+        // section 7.3.1, example 1 in Calabretta et al 2002
         var phi = argd(-1 * y, x);
         var r = Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
         var theta = atand((180 / Math.PI) * (1 / r));
 
         return [phi, theta];
     }
-   
+
+    function latLonToIntermediateTAN(latLon) {
+        var phi = latLon[0];
+        var theta = latLon[1];
+        
+        // eq (54) in Calabretta et al 2002
+        var r = (180/Math.PI) * cotd(theta);
+        // eq (12, 13) in Calabretta et al 2002
+        var x = r * sind(phi);
+        var y = -1 * r * cosd(phi);
+
+        return [x, y];
+    }
+    
+    /* does spherical coordinate rotation
+     */
     function latLonToWcs(wcsobj, latLon) {
         var phi = latLon[0];
         var theta = latLon[1];
@@ -134,6 +170,21 @@
         var dec = asind((sind(theta)*sind(dec_p)) + (cosd(theta)*cosd(dec_p)*cosd(phi-phi_p)));
 
         return [ra, dec];    
+    }
+
+    function wcsToLatLon(wcsobj, coord) {
+        var ra = coord[0];
+        var dec = coord[1];
+
+        var phi_p = 180;
+        var ra_p = wcsobj['CRVAL1'];
+        var dec_p = wcsobj['CRVAL2'];
+
+        // eq (5) in Calabretta et al 2002
+        var phi = phi_p + argd(((sind(dec)*cosd(dec_p)) - (cosd(dec)*sind(dec_p)*cosd(ra-ra_p))), -1*cosd(dec)*sind(ra-ra_p));
+        var theta = asind((sind(dec)*sind(dec_p)) + (cosd(dec)*cosd(dec_p)*cosd(ra-ra_p)));
+
+        return [phi, theta];
     }
 
     WCS.Mapper = function(header) {
@@ -157,7 +208,6 @@
          */
         this.pixelToCoordinate = function() {
             // TODO: validate arguments
-            
             var coord = getIntermediateWorldCoords(wcsobj, arguments);
             var latLon = intermediateToLatLongTAN(coord);
             var c = latLonToWcs(wcsobj, latLon);
@@ -166,9 +216,19 @@
             return {ra: c[0], dec: c[1]};
         };
 
-        this.coordinateToPixel = function(ra, dec) {
-            throw new Error("WCS.Mapper.coordinateToPixel() not implemented."); 
-            return {x: null, y: null};
+        this.coordinateToPixel = function() {
+            //throw new Error("WCS.Mapper.coordinateToPixel() not implemented."); 
+            var ra = arguments[0];
+            var dec = arguments[1];
+            
+            var latLon = wcsToLatLon(wcsobj, [ra, dec]);
+            var intercoord = latLonToIntermediateTAN(latLon);
+            var finalcoord = intermediateToFinal(wcsobj, intercoord);
+            
+            //console.log("ra, dec: "+ [ra, dec]);
+            //console.log("converted back: " + latLonToWcs(wcsobj, latLon));
+             
+            return {x: finalcoord[0], y: finalcoord[1]};
         };
     }
 } ).call(this);

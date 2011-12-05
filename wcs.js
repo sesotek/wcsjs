@@ -104,7 +104,7 @@
         // Default PCxxx transformation matrix element assumes identity matrix.
         // For each non-zero element in identity, do: (CDELTj * (px - CRPIXi))
         // NOTE: CDELT an CRPIX have 1 as first index.
-        // Section 7.3.1, example 1 in Calabretta et al 2002
+        // Section 7.3.1, example 1 in Calabretta and Greisen 2002
         for (var i=0; i<args.length; i++) {
             coord[i] = wcsobj['CDELT' + (i+1)] * (args[i] - wcsobj['CRPIX'+(i+1)]);
         }
@@ -134,7 +134,7 @@
         var x = coords[0];
         var y = coords[1];
         
-        // section 7.3.1, example 1 in Calabretta et al 2002
+        // section 7.3.1, example 1 in Calabretta and Greisen 2002
         var phi = argd(-1 * y, x);
         var r = Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
         var theta = atand((180 / Math.PI) * (1 / r));
@@ -146,9 +146,9 @@
         var phi = latLon[0];
         var theta = latLon[1];
         
-        // eq (54) in Calabretta et al 2002
+        // eq (54) in Calabretta and Greisen 2002
         var r = (180/Math.PI) * cotd(theta);
-        // eq (12, 13) in Calabretta et al 2002
+        // eq (12, 13) in Calabretta and Greisen 2002
         var x = r * sind(phi);
         var y = -1 * r * cosd(phi);
 
@@ -165,7 +165,7 @@
         var ra_p = wcsobj['CRVAL1'];
         var dec_p = wcsobj['CRVAL2'];
         
-        // eq (2) in Calabretta et al 2002
+        // eq (2) in Calabretta and Greisen 2002
         var ra = ra_p + argd(((sind(theta)*cosd(dec_p)) - (cosd(theta)*sind(dec_p)*cosd(phi-phi_p))), -1*cosd(theta)*sind(phi-phi_p));
         var dec = asind((sind(theta)*sind(dec_p)) + (cosd(theta)*cosd(dec_p)*cosd(phi-phi_p)));
 
@@ -180,7 +180,7 @@
         var ra_p = wcsobj['CRVAL1'];
         var dec_p = wcsobj['CRVAL2'];
 
-        // eq (5) in Calabretta et al 2002
+        // eq (5) in Calabretta and Greisen 2002
         var phi = phi_p + argd(((sind(dec)*cosd(dec_p)) - (cosd(dec)*sind(dec_p)*cosd(ra-ra_p))), -1*cosd(dec)*sind(ra-ra_p));
         var theta = asind((sind(dec)*sind(dec_p)) + (cosd(dec)*cosd(dec_p)*cosd(ra-ra_p)));
 
@@ -216,17 +216,22 @@
             return {ra: c[0], dec: c[1]};
         };
 
+        /*
+         * Returns object containing integer pixel coordinates as {x, y} for given ra and dec.
+         * Accepts ra and dec as decimal degrees, where:
+         *          0 <= ra < 360, and
+         *          -90 <= dec <= 90
+         * 
+         * eg: var wcsMapper = new WCS.Mapper(fitsHeader);
+         *     var x = wcsMapper.pixelToCoordinate(ra, dec).x;
+         */
         this.coordinateToPixel = function() {
-            //throw new Error("WCS.Mapper.coordinateToPixel() not implemented."); 
             var ra = arguments[0];
             var dec = arguments[1];
             
             var latLon = wcsToLatLon(wcsobj, [ra, dec]);
             var intercoord = latLonToIntermediateTAN(latLon);
             var finalcoord = intermediateToFinal(wcsobj, intercoord);
-            
-            //console.log("ra, dec: "+ [ra, dec]);
-            //console.log("converted back: " + latLonToWcs(wcsobj, latLon));
              
             return {x: finalcoord[0], y: finalcoord[1]};
         };

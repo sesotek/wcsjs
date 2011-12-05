@@ -111,7 +111,7 @@
         return coord;
     }
 
-    // TODO: make multidim like getIntermediateWorldCoords()
+    // TODO: Confirm this works for dimensions != 2
     function intermediateToFinal(wcsobj, coord) {
         var x = coord[0];
         var y = coord[1];
@@ -187,6 +187,7 @@
         return [phi, theta];
     }
 
+    // TODO: Support more projections than only TAN.
     WCS.Mapper = function(header) {
         // Object to contain FITS header values that are relevant to WCS, and functions for transformation.
         var wcsobj = {};
@@ -200,7 +201,7 @@
         copyFitsValuesToObj(header, wcsobj);
         
         /*
-         * Returns object containing ra and dec corresponding to pixel coordinates.
+         * Returns object as {ra, dec} for given pixel coordinates.
          * Accepts pixel coordinates as integers in order of FITS NAXIS axes (NAXIS1, NAXIS2, ...).
          * 
          * eg: var wcsMapper = new WCS.Mapper(fitsHeader);
@@ -211,7 +212,6 @@
             var coord = getIntermediateWorldCoords(wcsobj, arguments);
             var latLon = intermediateToLatLongTAN(coord);
             var c = latLonToWcs(wcsobj, latLon);
-            
             
             return {ra: c[0], dec: c[1]};
         };

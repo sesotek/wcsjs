@@ -1,5 +1,5 @@
 /*
- *
+ * wcs.js
  * Cite:
  * Calabretta and Greisen, 2002, Representations of celestial coordinates in FITS.
  */
